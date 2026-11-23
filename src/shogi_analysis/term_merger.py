@@ -29,8 +29,13 @@ def _align_to_source(tokens: Sequence[Mapping[str, str]], text: str) -> list[tup
     cursor = 0
     for token in tokens:
         surface = token["surface"]
-        if not surface:
-            raise ValueError("Empty token surface cannot be aligned")
+        if surface is None:
+            raise ValueError("Token surface is missing")
+        if surface == "":
+            # Sudachi may emit zero-length surfaces. Retain the token at the
+            # current cursor position; never treat it as a merge candidate.
+            spans.append((cursor, cursor))
+            continue
         start = text.find(surface, cursor)
         if start < 0 or text[cursor:start].strip():
             raise ValueError(
@@ -165,6 +170,7 @@ def export_merged_tokens(
         "utterances": len(source_texts),
         "original_tokens": len(all_tokens),
         "merged_tokens": len(merged_rows),
+        "empty_surface_tokens": sum(row["surface"] == "" for row in all_tokens),
         "振り飛車": counts["振り飛車"],
         "評価値": counts["評価値"],
     }

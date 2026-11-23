@@ -70,7 +70,7 @@ def test_csv_export_preserves_inputs_and_does_not_cross_utterances(tmp_path):
     before = tokens.read_bytes()
     counts = export_merged_tokens(tokens, utterances, output)
     assert counts == {"utterances": 2, "original_tokens": 2, "merged_tokens": 2,
-                      "振り飛車": 0, "評価値": 0}
+                      "empty_surface_tokens": 0, "振り飛車": 0, "評価値": 0}
     assert tokens.read_bytes() == before
     with output.open(encoding="utf-8-sig", newline="") as fp:
         result = list(csv.DictReader(fp))
@@ -107,3 +107,31 @@ def test_real_sudachi_merging_when_installed():
     assert counts["評価値"] == 1
     assert [row["surface"] for row in result if row["surface"] in
             {"振り飛車", "評価値", "角換わり"}] == ["振り飛車", "評価値", "角換わり"]
+
+def test_empty_surface_token_is_preserved_but_cannot_bridge_merge():
+    # Input is aligned literally, yet a zero-length Sudachi token appears
+    # between the two halves of the word. It must not be silently dropped.
+    before = [token("振り", 1), token("", 2), token("飛車", 3),
+              token("と", 4), token("評価", 5), token("値", 6)]
+    after, counts = merge_utterance(before, "振り飛車と評価値")
+    assert [r["surface"] for r in after] == ["振り", "", "飛車", "と", "評価値"]
+    assert [r["source_token_start"] for r in after] == ["1", "2", "3", "4", "5"]
+    assert after[1]["was_merged"] == 0
+    assert counts == {"評価値": 1}
+
+
+def test_empty_surface_token_survives_csv_export(tmp_path):
+    tokens = tmp_path / "tokens.csv"
+    utterances = tmp_path / "utterances.csv"
+    output = tmp_path / "tokens_merged.csv"
+    _write_csv(tokens, TOKEN_FIELDS, [token("振り", 1), token("", 2), token("飛車", 3)])
+    _write_csv(utterances, ["utterance_id", "text"], [
+        {"utterance_id": "2023-0001", "text": "振り飛車"},
+    ])
+    result = export_merged_tokens(tokens, utterances, output)
+    assert result["empty_surface_tokens"] == 1
+    assert result["merged_tokens"] == 3
+    assert result["振り飛車"] == 0
+    with output.open(encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    assert [r["surface"] for r in rows] == ["振り", "", "飛車"]
