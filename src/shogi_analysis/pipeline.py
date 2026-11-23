@@ -19,11 +19,15 @@ QUESTION_PATTERN = re.compile(r"^―+(.*)$")
 SECTION_PATTERN = re.compile(r"^【([^】]+)】$")
 
 
+
+#文章の正規化
 def normalized(text: str) -> str:
     """Normalize a *copy* for matching; never overwrite source quotations."""
     return unicodedata.normalize("NFKC", text)
 
 
+
+#AI関連語の検索
 def keyword_mentions(text: str) -> list[dict[str, str | int]]:
     """One mention per AI（人工知能）, even if both forms appear inside it."""
     clean = normalized(text)
@@ -36,6 +40,8 @@ def keyword_mentions(text: str) -> list[dict[str, str | int]]:
     return mentions
 
 
+
+#インタビューの発言を抽出
 def parse_interview(path: Path, year: int) -> list[dict]:
     lines = path.read_text(encoding="utf-8-sig").splitlines()
     utterances: list[dict] = []
@@ -118,6 +124,8 @@ def write_csv(path: Path, rows: list[dict], fields: list[str]) -> None:
         writer.writerows(rows)
 
 
+
+#年別に頻度を集計
 def run(data_dir: Path, output_dir: Path) -> dict[int, int]:
     units = []
     for year in YEARS:

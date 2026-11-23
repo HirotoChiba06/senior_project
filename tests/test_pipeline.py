@@ -1,12 +1,12 @@
 from pathlib import Path
 from shogi_analysis.pipeline import keyword_mentions, parse_interview, run
 
-
+# AI関連語の表記揺れを処理できているのか｡
 def test_variants_and_parenthetical_deduplication():
     mentions = keyword_mentions("ＡＩ（人工知能）とソフト、コンピューター、AI")
     assert [m["term"] for m in mentions] == ["AI", "ソフト", "コンピュータ", "AI"]
 
-
+#ページをまたぐ発言を正しく抽出できているのか｡
 def test_utterance_crossing_page_and_unlabeled_reply(tmp_path: Path):
     p = tmp_path / "shogi_yearbook_2026_fulltext.txt"
     p.write_text("""【PDF 1ページ目／誌面10ページ】
@@ -31,7 +31,7 @@ def test_utterance_crossing_page_and_unlabeled_reply(tmp_path: Path):
     assert units[1]["question_id"] == units[0]["utterance_id"]
     assert units[3]["mention_count"] == 1
 
-
+#4年分のデータを正常に処理できているか｡
 def test_full_corpus_runs_when_present(tmp_path: Path):
     data = Path(__file__).resolve().parents[1] / "data" / "raw"
     if not data.exists():
