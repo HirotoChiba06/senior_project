@@ -11,6 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 nlp = ["sudachipy==0.6.10", "sudachidict_core==20260428"]
+analysis = ["scikit-learn>=1.4,<2"]
 dev = ["pytest>=8,<10"]
 
 [tool.setuptools.packages.find]
